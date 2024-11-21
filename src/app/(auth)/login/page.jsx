@@ -1,22 +1,20 @@
 "use client";
-import Button from "@/shared/Button";
 import Typography from "@/shared/Typography";
 import theme from "@/themes/theme";
 import { yupResolver } from "@hookform/resolvers/yup";
-import {
-  Box,
-  Checkbox,
-  FormControlLabel,
-  TextField
-} from "@mui/material";
+import { Box, Checkbox, FormControlLabel, TextField } from "@mui/material";
 import { useForm } from "react-hook-form";
 import * as Yup from "yup";
 import bgImage from "../../../../public/assets/Vectors.png";
 import { useDispatch } from "react-redux";
 import { login } from "@/redux/actions/authAction";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { useEffect, useState } from "react";
+import MuiButton from "@/shared/Button";
 
 const LoginPage = () => {
-  const dispatch = useDispatch()
+  const [loader, setLoader] = useState(false);
   const validationSchema = Yup.object().shape({
     email: Yup.string()
       .email("Invalid email address")
@@ -26,17 +24,43 @@ const LoginPage = () => {
       .required("Password is required"),
     rememberMe: Yup.boolean(),
   });
-
+  const dispatch = useDispatch();
+  const router = useRouter();
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: yupResolver(validationSchema),
+    values: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
   });
+  const rememberMe = watch("rememberMe");
+
+  useEffect(() => {
+    const email = Cookies.get("email");
+    const password = Cookies.get("password");
+    if (email && password) {
+      setValue("email", email);
+      setValue("password", password);
+      setValue("rememberMe", true);
+    }
+  }, []);
+
   const onSubmit = (data) => {
-    console.log("Form Data: ", data);
-    dispatch(login(data));
+    if (data?.rememberMe) {
+      Cookies.set("email", data.email);
+      Cookies.set("password", data.password);
+    } else {
+      Cookies.remove("email", data.email);
+      Cookies.remove("password", data.password);
+    }
+    dispatch(login(data, router, setLoader));
   };
 
   return (
@@ -47,6 +71,7 @@ const LoginPage = () => {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        position: "relative",
       }}
     >
       <Box
@@ -73,19 +98,22 @@ const LoginPage = () => {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <TextField
             {...register("email")}
-            label="Email"
-            variant="outlined"
+            placeholder="Email"
             fullWidth
             autoComplete="off"
             sx={{
+              "& .MuiInputBase-root": {
+                overflow: "hidden",
+                borderRadius: "10px",
+              },
               input: {
                 color: "white.main",
                 bgcolor: "#224957",
-                borderRadius: "10px",
                 "&:-webkit-autofill": {
                   bgcolor: "#224957",
                   WebkitBoxShadow: "0 0 0px 1000px #224957 inset ",
-                  color: '#fff !important'
+                  WebkitTextFillColor: "white !important",
+                  color: "#fff !important",
                 },
               },
               label: { color: "white.main" },
@@ -105,20 +133,29 @@ const LoginPage = () => {
           />
           <TextField
             {...register("password")}
-            label="Password"
+            placeholder="Password"
             type="password"
             variant="outlined"
             fullWidth
             margin="normal"
             sx={{
+              "& .MuiInputBase-root": {
+                overflow: "hidden",
+                borderRadius: "10px",
+              },
               input: {
                 color: "white.main",
                 bgcolor: "#224957",
-                borderRadius: "10px",
                 "&:-webkit-autofill": {
                   bgcolor: "#224957",
                   WebkitBoxShadow: "0 0 0px 1000px #224957 inset ",
-                  color: 'white.main !important'
+                  WebkitTextFillColor: "white !important",
+                  color: "white.main !important",
+                },
+                "&:-webkit-autofill-selected": {
+                  bgcolor: "#224957",
+                  WebkitBoxShadow: "0 0 0px 1000px #224957 inset ",
+                  color: "white.main !important",
                 },
               },
               label: { color: "white.main" },
@@ -130,7 +167,7 @@ const LoginPage = () => {
               "& .MuiFormHelperText-root": {
                 color: errors.password
                   ? `${theme.palette.primary.error}`
-                  : "white.main", 
+                  : "white.main",
               },
             }}
             error={!!errors.password}
@@ -140,6 +177,7 @@ const LoginPage = () => {
             control={
               <Checkbox
                 {...register("rememberMe")}
+                checked={rememberMe}
                 sx={{
                   color: "#224957",
                   "&.Mui-checked": { color: "#6ee7b7" },
@@ -155,17 +193,24 @@ const LoginPage = () => {
               justifyContent: "center",
             }}
           />
-          <Button
+          <MuiButton
             type="submit"
             fullWidth
             variant="contained"
+            disabled={loader}
             sx={{
               marginTop: "20px",
               padding: "10px",
+              color: "white !important",
+              fontWeight: "700",
+              "&.Mui-disabled": {
+                color: "white !important",
+                backgroundColor: "#6ee7b7 !important",
+              },
             }}
           >
-            Login
-          </Button>
+            {loader ? "Loading..." : "Login"}
+          </MuiButton>
         </form>
       </Box>
       <Box

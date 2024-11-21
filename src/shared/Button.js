@@ -15,9 +15,5 @@ const StyledButton = styled(Button)(({ theme }) => ({
 }));
 
 export default function MuiButton({ children, ...rest }) {
-  return (
-    <StyledButton {...rest} disableElevation>
-      {children}
-    </StyledButton>
-  );
+  return <StyledButton {...rest}>{children}</StyledButton>;
 }
