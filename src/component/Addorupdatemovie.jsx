@@ -61,11 +61,24 @@ export default function Addorupdatemovie({ movie }) {
       : defaultValue,
   });
 
-  const onDrop = (acceptedFiles) => {
+  const onDrop = (acceptedFiles, fileRejections) => {
     setValue("file", acceptedFiles[0]);
     setError("file", "");
-    setImagePreview(URL.createObjectURL(acceptedFiles[0]));
+    !fileRejections?.length &&
+      setImagePreview(URL.createObjectURL(acceptedFiles[0]));
+    fileRejections.forEach(({ file, errors }) => {
+      errors.forEach((error) => {
+        toast.error(`${error.message}`);
+      });
+    });
   };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [],
+    },
+  });
 
   const onSubmit = async (data) => {
     setLoader(true);
@@ -99,8 +112,6 @@ export default function Addorupdatemovie({ movie }) {
       toast.error(error?.message || "Something went wrong");
     }
   };
-
-  const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
   return (
     <Box
